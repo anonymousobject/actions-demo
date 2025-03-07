@@ -9,7 +9,7 @@ env:
 jobs:
   terraform:
     # Only run this on PR comments
-    if: ${{ github.event.issue.pull_request }} && contains(github.event.comment.body, '/tf apply')
+    if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '/tf apply') }}
     name: "Terraform Apply"
     runs-on: ubuntu-latest
     permissions: # granular permissions
