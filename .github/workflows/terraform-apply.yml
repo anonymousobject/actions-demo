@@ -1,0 +1,75 @@
+name: "Terraform Apply"
+
+on: issue_comment
+
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+jobs:
+  terraform:
+    # Only run this on PR comments
+    if: ${{ github.event.issue.pull_request }} && contains(github.event.comment.body, '/tf apply')
+    name: "Terraform Apply"
+    runs-on: ubuntu-latest
+    permissions: # granular permissions
+      # so GitHub can check out this repo using the default github.token
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+    
+      - name: Terraform fmt
+        id: fmt
+        run: terraform fmt -check
+        continue-on-error: true
+    
+      - name: Terraform Init
+        id: init
+        run: terraform init -input=false
+    
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+    
+      - name: Terraform Apply
+        id: apply
+        run: terraform apply -no-color -input=false
+        continue-on-error: true
+    
+      - uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        env:
+          apply: "terraform\n${{ steps.apply.outputs.stdout }}"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
+            #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
+            #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
+            <details><summary>Validation Output</summary>
+    
+            \`\`\`\n
+            ${{ steps.validate.outputs.stdout }}
+            \`\`\`
+    
+            </details>
+    
+            #### Terraform apply 📖\`${{ steps.apply.outcome }}\`
+    
+            <details><summary>Show apply</summary>
+    
+            \`\`\`\n
+            ${process.env.apply}
+            \`\`\`
+    
+            </details>
+    
+            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`${{ env.tf_actions_working_dir }}\`, Workflow: \`${{ github.workflow }}\`*`;
+    
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
