@@ -1,7 +1,8 @@
 name: "Terraform Plan"
 
 on:
-  pull_request:
+  [push]
+  # pull_request:
 
 env:
   # TF_CLOUD_ORGANIZATION: "YOUR-ORGANIZATION-HERE"
@@ -17,9 +18,9 @@ jobs:
       # so GitHub can check out this repo using the default github.token
       contents: read
       pull-requests: write
-    defaults:
-      run:
-        working-directory: ${{ env.tf_actions_working_dir }}
+    # defaults:
+    #   run:
+    #     working-directory: ${{ env.tf_actions_working_dir }}
 
     steps:
       - uses: actions/checkout@v4
