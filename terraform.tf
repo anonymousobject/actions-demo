@@ -1,8 +1,9 @@
 terraform {
-
   backend "s3" {
-    bucket         = "anonymousobject-terraform"
-    dynamodb_table = "terraform-lock-table"
+    bucket       = "anonymousobject-terraform"
+    key          = "actions-demo"
+    use_lockfile = true
+    region       = "us-east-1"
   }
 
   required_providers {
